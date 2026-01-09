@@ -26,11 +26,11 @@ export const BUSINESS_CONFIG = {
     '2024-12-25', // Navidad
     '2024-01-01', // Año Nuevo
     // Agregar más fechas según sea necesario
-  ],
+  ] as string[], // Cambiado de parte del 'as const' general
 
   // Tiempo de expiración para citas pendientes (en minutos)
   pendingExpirationMinutes: 30,
 
   // Zona horaria
   timezone: 'America/Guayaquil',
-} as const;
+};
