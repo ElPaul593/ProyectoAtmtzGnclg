@@ -1,6 +1,6 @@
 import { supabaseAdmin, Appointment } from './supabaseAdmin';
 import { logger } from './logger';
-import { BUSINESS_CONFIG } from '@/config/business';
+import { BUSINESS_CONFIG } from '../config/business';
 
 /**
  * Generar slots disponibles para una fecha y servicio
