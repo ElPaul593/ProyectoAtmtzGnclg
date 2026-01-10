@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Clave de idempotencia para evitar procesamiento duplicado
-      const idempotencyKey = generateIdempotencyKey('webhook', orderId);
+      const idempotencyKey = generateIdempotencyKey(`webhook-${orderId}`);
 
       // Buscar la cita
       const { data: appointment, error: fetchError } = await supabaseAdmin

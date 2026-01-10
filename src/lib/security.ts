@@ -20,6 +20,6 @@ export function verifyAdminAuth(request: NextRequest): boolean {
   return token === apiKey;
 }
 
-export function generateIdempotencyKey(data: string): string {
-  return crypto.createHash('sha256').update(data).digest('hex');
+export function generateIdempotencyKey(...data: string[]): string {
+  return crypto.createHash('sha256').update(data.join('-')).digest('hex');
 }
