@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { approveTransferSchema } from '@/lib/validation';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { createCalendarEvent } from '@/lib/calendar';
-import { verifyAdminAuth } from '@/lib/security';
-import { logger } from '@/lib/logger';
+import { approveTransferSchema } from '../../../../lib/validation';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { createCalendarEvent } from '../../../../lib/calendar';
+import { verifyAdminAuth } from '../../../../lib/security';
+import { logger } from '../../../../lib/logger';
 
 export async function POST(request: NextRequest) {
   try {

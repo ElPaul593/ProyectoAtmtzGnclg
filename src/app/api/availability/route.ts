@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { availabilityQuerySchema } from '@/lib/validation';
-import { getAvailableSlots } from '@/lib/slots';
-import { logger } from '@/lib/logger';
+import { availabilityQuerySchema } from '../../../lib/validation';
+import { getAvailableSlots } from '../../../lib/slots';
+import { logger } from '../../../lib/logger';
 
 export async function GET(request: NextRequest) {
   try {

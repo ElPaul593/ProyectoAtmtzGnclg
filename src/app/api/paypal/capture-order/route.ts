@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { capturePayPalOrder } from '@/lib/paypal';
-import { logger } from '@/lib/logger';
+import { capturePayPalOrder } from '../../../../lib/paypal';
+import { logger } from '../../../../lib/logger';
 
 const captureOrderSchema = z.object({
   orderId: z.string(),

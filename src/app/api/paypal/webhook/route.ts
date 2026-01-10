@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyWebhookSignature } from '@/lib/paypal';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { createCalendarEvent } from '@/lib/calendar';
-import { logger } from '@/lib/logger';
-import { generateIdempotencyKey } from '@/lib/security';
+import { verifyWebhookSignature } from '../../../../lib/paypal';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { createCalendarEvent } from '../../../../lib/calendar';
+import { logger } from '../../../../lib/logger';
+import { generateIdempotencyKey } from '../../../../lib/security';
 
 export async function POST(request: NextRequest) {
   try {

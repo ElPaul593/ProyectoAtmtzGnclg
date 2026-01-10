@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDayQuerySchema } from '@/lib/validation';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { verifyAdminAuth } from '@/lib/security';
-import { logger } from '@/lib/logger';
+import { adminDayQuerySchema } from '../../../../lib/validation';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { verifyAdminAuth } from '../../../../lib/security';
+import { logger } from '../../../../lib/logger';
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { createPayPalOrder } from '@/lib/paypal';
-import { logger } from '@/lib/logger';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { createPayPalOrder } from '../../../../lib/paypal';
+import { logger } from '../../../../lib/logger';
 
 const createOrderSchema = z.object({
   appointmentId: z.string().uuid(),

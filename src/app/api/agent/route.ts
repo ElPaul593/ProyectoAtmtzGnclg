@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { agentRequestSchema } from '@/lib/validation';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { getAvailableSlots } from '@/lib/slots';
-import { logger } from '@/lib/logger';
+import { agentRequestSchema } from '../../../lib/validation';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { getAvailableSlots } from '../../../lib/slots';
+import { logger } from '../../../lib/logger';
 
 const SAFETY_WARNING = `
 ⚠️ ADVERTENCIA IMPORTANTE:

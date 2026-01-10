@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAppointmentSchema } from '@/lib/validation';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { isSlotAvailable } from '@/lib/slots';
-import { logger } from '@/lib/logger';
+import { createAppointmentSchema } from '../../../lib/validation';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
+import { isSlotAvailable } from '../../../lib/slots';
+import { logger } from '../../../lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
