@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { verifyWebhookSignature } from '../../../../lib/paypal';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { createCalendarEvent } from '../../../../lib/calendar';

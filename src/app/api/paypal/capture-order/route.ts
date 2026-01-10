@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { capturePayPalOrder } from '../../../../lib/paypal';
 import { logger } from '../../../../lib/logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const captureOrderSchema = z.object({
   orderId: z.string(),
 });

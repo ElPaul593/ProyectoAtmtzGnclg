@@ -5,6 +5,9 @@ import { createCalendarEvent } from '../../../../lib/calendar';
 import { verifyAdminAuth } from '../../../../lib/security';
 import { logger } from '../../../../lib/logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticación de administrador

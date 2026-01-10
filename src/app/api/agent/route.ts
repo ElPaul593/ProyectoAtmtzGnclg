@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { agentRequestSchema } from '../../../lib/validation';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { getAvailableSlots } from '../../../lib/slots';

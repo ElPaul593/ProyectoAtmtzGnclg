@@ -4,6 +4,9 @@ import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { createPayPalOrder } from '../../../../lib/paypal';
 import { logger } from '../../../../lib/logger';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const createOrderSchema = z.object({
   appointmentId: z.string().uuid(),
 });
