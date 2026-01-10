@@ -6,15 +6,21 @@ let calendar: any = null;
 function getCalendar() {
   if (calendar) return calendar;
 
-  if (!process.env.GOOGLE_CALENDAR_CREDENTIALS) {
+  const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  const calendarId = process.env.GOOGLE_CALENDAR_ID;
+
+  if (!serviceAccountEmail || !privateKey || !calendarId) {
     logger.warn('Google Calendar credentials not configured');
     return null;
   }
 
   try {
-    const credentials = JSON.parse(process.env.GOOGLE_CALENDAR_CREDENTIALS);
     const auth = new google.auth.GoogleAuth({
-      credentials,
+      credentials: {
+        client_email: serviceAccountEmail,
+        private_key: privateKey.replace(/\\n/g, '\n'),
+      },
       scopes: ['https://www.googleapis.com/auth/calendar'],
     });
 
@@ -42,20 +48,23 @@ export async function createCalendarEvent(
   }
 
   try {
+    const calendarId = process.env.GOOGLE_CALENDAR_ID;
+    
     const event = {
       summary: `${serviceName} - ${patientName}`,
       description: `Cita ID: ${appointmentId}`,
-      start: { dateTime: startAt },
-      end: { dateTime: endAt },
+      start: { dateTime: startAt, timeZone: 'America/Guayaquil' },
+      end: { dateTime: endAt, timeZone: 'America/Guayaquil' },
       attendees: [{ email: patientEmail }],
     };
 
     const response = await cal.events.insert({
-      calendarId: 'primary',
+      calendarId,
       resource: event,
       sendUpdates: 'all',
     });
 
+    logger.info({ appointmentId, eventId: response.data.id }, 'Calendar event created');
     return response.data.id;
   } catch (error) {
     logger.error({ error, appointmentId }, 'Error creating calendar event');
