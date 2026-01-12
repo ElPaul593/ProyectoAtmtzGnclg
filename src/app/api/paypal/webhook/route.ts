@@ -1,22 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { 
+  env, 
+  serverEnvOptional, 
+  isPayPalWebhookConfigured,
+  serverEnvRequired 
+} from '@/lib/env';
+import { createClient } from '@supabase/supabase-js';
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+/**
+ * Verifica la firma del webhook de PayPal
+ */
+async function verifyPayPalWebhook(
+  webhookId: string,
+  headers: Record<string, string>,
+  body: string
+): Promise<boolean> {
+  try {
+    const mode = serverEnvOptional.paypalMode();
+    const baseUrl = mode === 'live' 
+      ? 'https://api-m.paypal.com'
+      : 'https://api-m.sandbox.paypal.com';
 
-import { verifyWebhookSignature } from '../../../../lib/paypal';
-import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
-import { createCalendarEvent } from '../../../../lib/calendar';
-import { logger } from '../../../../lib/logger';
-import { generateIdempotencyKey } from '../../../../lib/security';
+    // Obtener access token
+    const clientId = env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+    const clientSecret = serverEnvRequired.paypalClientSecret('PayPal webhook verification');
+    
+    const authResponse = await fetch(`${baseUrl}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+      },
+      body: 'grant_type=client_credentials',
+    });
 
+    if (!authResponse.ok) {
+      console.error('Failed to get PayPal access token');
+      return false;
+    }
+
+    const { access_token } = await authResponse.json();
+
+    // Verificar webhook signature
+    const verifyResponse = await fetch(`${baseUrl}/v1/notifications/verify-webhook-signature`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${access_token}`,
+      },
+      body: JSON.stringify({
+        transmission_id: headers['paypal-transmission-id'],
+        transmission_time: headers['paypal-transmission-time'],
+        cert_url: headers['paypal-cert-url'],
+        auth_algo: headers['paypal-auth-algo'],
+        transmission_sig: headers['paypal-transmission-sig'],
+        webhook_id: webhookId,
+        webhook_event: JSON.parse(body),
+      }),
+    });
+
+    const verification = await verifyResponse.json();
+    return verification.verification_status === 'SUCCESS';
+  } catch (error) {
+    console.error('Error verifying PayPal webhook:', error);
+    return false;
+  }
+}
+
+/**
+ * POST /api/paypal/webhook
+ * Endpoint para recibir notificaciones de PayPal
+ */
 export async function POST(request: NextRequest) {
   try {
-    // Leer el body como texto para verificación
+    // Verificar si el webhook está configurado
+    if (!isPayPalWebhookConfigured()) {
+      console.warn('⚠️ PayPal webhook endpoint called but PAYPAL_WEBHOOK_ID not configured');
+      return NextResponse.json(
+        { 
+          error: 'Webhook not configured',
+          message: 'PAYPAL_WEBHOOK_ID must be set after creating the webhook in PayPal dashboard'
+        },
+        { status: 503 }
+      );
+    }
+
+    // Leer body como texto (necesario para verificación de firma)
     const body = await request.text();
     const event = JSON.parse(body);
 
-    // Obtener headers para verificación
-    const headers = {
+    // Extraer headers necesarios para verificación
+    const headers: Record<string, string> = {
       'paypal-transmission-id': request.headers.get('paypal-transmission-id') || '',
       'paypal-transmission-time': request.headers.get('paypal-transmission-time') || '',
       'paypal-cert-url': request.headers.get('paypal-cert-url') || '',
@@ -25,112 +99,89 @@ export async function POST(request: NextRequest) {
     };
 
     // Verificar firma del webhook
-    const isValid = await verifyWebhookSignature(headers, body);
+    const webhookId = serverEnvOptional.paypalWebhookId()!;
+    const isValid = await verifyPayPalWebhook(webhookId, headers, body);
+
     if (!isValid) {
-      logger.error({ event }, 'Invalid webhook signature');
+      console.error('❌ Invalid PayPal webhook signature');
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 401 }
       );
     }
 
-    logger.info({ eventType: event.event_type }, 'Valid webhook received');
+    console.log('✅ PayPal webhook verified:', event.event_type);
 
-    // Procesar solo eventos de pago completado
-    if (event.event_type === 'CHECKOUT.ORDER.APPROVED' || 
-        event.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
+    // Procesar eventos de pago
+    if (event.event_type === 'PAYMENT.CAPTURE.COMPLETED') {
+      const captureId = event.resource.id;
+      const orderId = event.resource.supplementary_data?.related_ids?.order_id;
       
-      const orderId = event.resource.id || event.resource.supplementary_data?.related_ids?.order_id;
-      
-      if (!orderId) {
-        logger.warn({ event }, 'No order ID in webhook event');
-        return NextResponse.json({ received: true });
-      }
+      console.log(`💰 Payment completed - Order: ${orderId}, Capture: ${captureId}`);
 
-      // Clave de idempotencia para evitar procesamiento duplicado
-      const idempotencyKey = generateIdempotencyKey(`webhook-${orderId}`);
-
-      // Buscar la cita
-      const { data: appointment, error: fetchError } = await supabaseAdmin
-        .from('appointments')
-        .select('*, services(*)')
-        .eq('paypal_order_id', orderId)
-        .single();
-
-      if (fetchError || !appointment) {
-        logger.warn({ orderId }, 'Appointment not found for order');
-        return NextResponse.json({ received: true });
-      }
-
-      // Verificar si ya está confirmada (idempotencia)
-      if (appointment.status === 'CONFIRMED' && appointment.calendar_event_id) {
-        logger.info({ appointmentId: appointment.id }, 'Appointment already confirmed');
-        return NextResponse.json({ received: true });
-      }
-
-      // Extraer capture ID si está disponible
-      let captureId = appointment.paypal_capture_id;
-      if (event.resource.purchase_units?.[0]?.payments?.captures?.[0]?.id) {
-        captureId = event.resource.purchase_units[0].payments.captures[0].id;
-      }
-
-      // Crear evento en Google Calendar
-      let calendarEventId = appointment.calendar_event_id;
-      
-      if (!calendarEventId) {
-        try {
-          calendarEventId = await createCalendarEvent(
-            appointment.id,
-            appointment.patient_name,
-            appointment.patient_email,
-            appointment.start_at,
-            appointment.end_at,
-            appointment.services.name
-          );
-        } catch (calendarError) {
-          logger.error(
-            { error: calendarError, appointmentId: appointment.id },
-            'Failed to create calendar event'
-          );
-          // No fallar el webhook por error de calendario
-        }
-      }
-
-      // Actualizar cita a CONFIRMED
-      const { error: updateError } = await supabaseAdmin
-        .from('appointments')
-        .update({
-          status: 'CONFIRMED',
-          paypal_capture_id: captureId,
-          calendar_event_id: calendarEventId,
-        })
-        .eq('id', appointment.id)
-        .eq('status', 'PENDING'); // Condición para idempotencia
-
-      if (updateError) {
-        logger.error(
-          { error: updateError, appointmentId: appointment.id },
-          'Error confirming appointment'
-        );
-        throw updateError;
-      }
-
-      logger.info(
-        {
-          appointmentId: appointment.id,
-          orderId,
-          captureId,
-          calendarEventId,
-        },
-        'Appointment confirmed via webhook'
+      // Actualizar estado en Supabase
+      const supabase = createClient(
+        env.NEXT_PUBLIC_SUPABASE_URL,
+        serverEnvRequired.supabaseServiceRoleKey('PayPal webhook - update booking')
       );
+
+      // Buscar reserva por custom_id u order_id
+      const customId = event.resource.custom_id;
+      if (customId) {
+        const { error } = await supabase
+          .from('reservas')
+          .update({
+            estado_pago: 'completado',
+            paypal_order_id: orderId,
+            paypal_capture_id: captureId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', customId);
+
+        if (error) {
+          console.error('Error updating booking:', error);
+          return NextResponse.json(
+            { error: 'Database update failed' },
+            { status: 500 }
+          );
+        }
+
+        console.log(`✅ Booking ${customId} marked as paid`);
+      }
+    }
+
+    // Otros eventos relevantes
+    if (event.event_type === 'PAYMENT.CAPTURE.DENIED') {
+      console.log('❌ Payment denied:', event.resource.id);
+      // Opcional: marcar como fallido en DB
     }
 
     return NextResponse.json({ received: true });
 
   } catch (error) {
-    logger.error({ error }, 'Error processing webhook');
-    // Devolver 200 para evitar reintentos innecesarios
-    return NextResponse.json({ received: true });
+    console.error('Error processing PayPal webhook:', error);
+    return NextResponse.json(
+      { 
+        error: 'Webhook processing failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
+}
+
+/**
+ * GET /api/paypal/webhook
+ * Endpoint de salud para verificar configuración
+ */
+export async function GET() {
+  const configured = isPayPalWebhookConfigured();
+  
+  return NextResponse.json({
+    status: configured ? 'configured' : 'pending',
+    message: configured 
+      ? 'PayPal webhook is configured and ready'
+      : 'PayPal webhook needs PAYPAL_WEBHOOK_ID to be set',
+    environment: serverEnvOptional.paypalMode(),
+  });
 }
