@@ -258,3 +258,36 @@ curl -X POST https://tu-app.vercel.app/api/paypal/webhook \
 
 ### 📦 Estructura del Proyecto
 
+## 🤖 Agente de IA (OpenAI)
+
+El endpoint `/api/agent` ahora integra OpenAI (opcional) para generar respuestas más naturales en el flujo de reservas. Para activarlo, configura `OPENAI_API_KEY` en Vercel o en tu entorno local. Si no está configurada, el agente usa mensajes de respaldo basados en reglas.
+
+Variables necesarias:
+
+```bash
+OPENAI_API_KEY=sk-...
+```
+
+---
+
+## 📈 Reportes de impacto (Python)
+
+Se incluye un script de Python para generar reportes con el impacto de las reservas (volumen diario y revenue estimado por servicios confirmados). El script consulta Supabase vía REST y genera archivos en `reports/`.
+
+```bash
+python3 scripts/report_impact.py
+```
+
+Variables necesarias:
+
+```bash
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiI...
+```
+
+Salidas:
+
+```
+reports/impact_report.csv
+reports/impact_report.json
+```

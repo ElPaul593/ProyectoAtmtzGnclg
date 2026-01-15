@@ -7,6 +7,7 @@ import { agentRequestSchema } from '../../../lib/validation';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import { getAvailableSlots } from '../../../lib/slots';
 import { logger } from '../../../lib/logger';
+import { serverEnvRequired } from '../../../lib/env';
 
 const SAFETY_WARNING = `
 ⚠️ ADVERTENCIA IMPORTANTE:
@@ -30,6 +31,65 @@ interface AgentContext {
   selectedDate?: string;
   selectedSlot?: string;
   appointmentId?: string;
+}
+
+async function generateAiResponse(payload: {
+  message: string;
+  conversationHistory: { role: 'user' | 'assistant'; content: string }[];
+  baseQuestion: string;
+  context: AgentContext;
+}) {
+  try {
+    const apiKey = serverEnvRequired.openaiApiKey('AI agent response');
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        temperature: 0.4,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Eres un asistente de una clínica de ginecología y obstetricia. Tu objetivo es ayudar a completar reservas de citas. ' +
+              'No brindes diagnósticos médicos. Responde en español de forma clara y amable.',
+          },
+          ...payload.conversationHistory,
+          {
+            role: 'user',
+            content: payload.message,
+          },
+          {
+            role: 'assistant',
+            content:
+              `Contexto actual: ${JSON.stringify(payload.context)}. ` +
+              `Siguiente paso sugerido: ${payload.baseQuestion}`,
+          },
+          {
+            role: 'user',
+            content:
+              'Redacta la siguiente pregunta para continuar la reserva. ' +
+              'Mantén el objetivo del siguiente paso sugerido.',
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      logger.warn({ status: response.status }, 'OpenAI response not OK');
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content?.trim();
+    return content || null;
+  } catch (error) {
+    logger.warn({ error }, 'OpenAI integration failed, using fallback');
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -58,9 +118,19 @@ export async function POST(request: NextRequest) {
     );
 
     if (askingMedicalAdvice) {
+      const baseQuestion =
+        'Entiendo tu preocupación. Este servicio es únicamente para reservar citas. ' +
+        '¿Te gustaría agendar una consulta con nuestro médico especialista para que pueda evaluarte personalmente?';
+      const aiQuestion = await generateAiResponse({
+        message,
+        conversationHistory,
+        baseQuestion,
+        context: userContext,
+      });
+
       return NextResponse.json({
         warning: SAFETY_WARNING,
-        next_question: 'Entiendo tu preocupación. Este servicio es únicamente para reservar citas. ¿Te gustaría agendar una consulta con nuestro médico especialista para que pueda evaluarte personalmente?',
+        next_question: aiQuestion ?? baseQuestion,
         filled_fields: userContext,
         suggested_slots: [],
         requiresInput: ['confirmation'],
@@ -74,9 +144,18 @@ export async function POST(request: NextRequest) {
         .select('*')
         .eq('is_active', true);
 
+      const baseQuestion =
+        '¿Qué tipo de servicio necesitas? Tenemos: ' +
+        services?.map(s => `\n- ${s.name} ($${s.price_usd})`).join('');
+      const aiQuestion = await generateAiResponse({
+        message,
+        conversationHistory,
+        baseQuestion,
+        context: userContext,
+      });
+
       return NextResponse.json({
-        next_question: '¿Qué tipo de servicio necesitas? Tenemos: ' + 
-          services?.map(s => `\n- ${s.name} ($${s.price_usd})`).join(''),
+        next_question: aiQuestion ?? baseQuestion,
         filled_fields: userContext,
         suggested_slots: [],
         available_services: services,
@@ -95,8 +174,17 @@ export async function POST(request: NextRequest) {
         suggestedDates.push(date.toISOString().split('T')[0]);
       }
 
+      const baseQuestion =
+        '¿Qué día te gustaría agendar tu cita? Aquí hay algunas opciones disponibles:';
+      const aiQuestion = await generateAiResponse({
+        message,
+        conversationHistory,
+        baseQuestion,
+        context: userContext,
+      });
+
       return NextResponse.json({
-        next_question: '¿Qué día te gustaría agendar tu cita? Aquí hay algunas opciones disponibles:',
+        next_question: aiQuestion ?? baseQuestion,
         filled_fields: userContext,
         suggested_dates: suggestedDates,
         requiresInput: ['selectedDate'],
@@ -111,16 +199,34 @@ export async function POST(request: NextRequest) {
       );
 
       if (slots.length === 0) {
+        const baseQuestion =
+          'Lo siento, no hay horarios disponibles para ese día. ¿Te gustaría elegir otra fecha?';
+        const aiQuestion = await generateAiResponse({
+          message,
+          conversationHistory,
+          baseQuestion,
+          context: userContext,
+        });
+
         return NextResponse.json({
-          next_question: 'Lo siento, no hay horarios disponibles para ese día. ¿Te gustaría elegir otra fecha?',
+          next_question: aiQuestion ?? baseQuestion,
           filled_fields: { ...userContext, selectedDate: undefined },
           suggested_slots: [],
           requiresInput: ['selectedDate'],
         });
       }
 
+      const baseQuestion =
+        'Perfecto, aquí están los horarios disponibles. ¿Cuál prefieres?';
+      const aiQuestion = await generateAiResponse({
+        message,
+        conversationHistory,
+        baseQuestion,
+        context: userContext,
+      });
+
       return NextResponse.json({
-        next_question: 'Perfecto, aquí están los horarios disponibles. ¿Cuál prefieres?',
+        next_question: aiQuestion ?? baseQuestion,
         filled_fields: userContext,
         suggested_slots: slots.map(slot => {
           const date = new Date(slot);
@@ -143,8 +249,16 @@ export async function POST(request: NextRequest) {
       if (!userContext.patientEmail) missingFields.push('correo electrónico');
       if (!userContext.patientPhone) missingFields.push('teléfono');
 
+      const baseQuestion = `Para completar tu reserva, necesito tu ${missingFields.join(', ')}. Por favor proporciónalos.`;
+      const aiQuestion = await generateAiResponse({
+        message,
+        conversationHistory,
+        baseQuestion,
+        context: userContext,
+      });
+
       return NextResponse.json({
-        next_question: `Para completar tu reserva, necesito tu ${missingFields.join(', ')}. Por favor proporciónalos.`,
+        next_question: aiQuestion ?? baseQuestion,
         filled_fields: userContext,
         requiresInput: missingFields,
       });
@@ -191,8 +305,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const baseQuestion =
+        '¡Excelente! He creado tu cita. Ahora necesitas completar el pago para confirmarla. ' +
+        '¿Prefieres pagar con PayPal/tarjeta o transferencia bancaria?';
+      const aiQuestion = await generateAiResponse({
+        message,
+        conversationHistory,
+        baseQuestion,
+        context: { ...userContext, appointmentId: appointment.id },
+      });
+
       return NextResponse.json({
-        next_question: '¡Excelente! He creado tu cita. Ahora necesitas completar el pago para confirmarla. ¿Prefieres pagar con PayPal/tarjeta o transferencia bancaria?',
+        next_question: aiQuestion ?? baseQuestion,
         filled_fields: { ...userContext, appointmentId: appointment.id },
         appointmentId: appointment.id,
         payment_status: 'PENDING',
@@ -202,8 +326,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Cita ya creada, esperar pago
+    const baseQuestion = 'Tu cita está reservada. Por favor procede con el pago para confirmarla.';
+    const aiQuestion = await generateAiResponse({
+      message,
+      conversationHistory,
+      baseQuestion,
+      context: userContext,
+    });
+
     return NextResponse.json({
-      next_question: 'Tu cita está reservada. Por favor procede con el pago para confirmarla.',
+      next_question: aiQuestion ?? baseQuestion,
       filled_fields: userContext,
       appointmentId: userContext.appointmentId,
       payment_status: 'AWAITING_PAYMENT',
