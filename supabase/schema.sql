@@ -12,6 +12,30 @@ CREATE TYPE payment_method AS ENUM (
   'TRANSFER'
 );
 
+CREATE TYPE gender_type AS ENUM (
+  'M',
+  'F',
+  'OTRO'
+);
+
+-- Tabla de pacientes
+CREATE TABLE patients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cedula VARCHAR(10) NOT NULL UNIQUE,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  birth_date DATE NOT NULL,
+  gender gender_type NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(15) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para pacientes
+CREATE INDEX idx_patients_cedula ON patients(cedula);
+CREATE INDEX idx_patients_email ON patients(email);
+
 -- Tabla de servicios
 CREATE TABLE services (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -28,11 +52,9 @@ CREATE TABLE services (
 CREATE TABLE appointments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   service_id UUID NOT NULL REFERENCES services(id),
+  patient_id UUID NOT NULL REFERENCES patients(id),
   
-  -- Datos del paciente
-  patient_name VARCHAR(255) NOT NULL,
-  patient_email VARCHAR(255) NOT NULL,
-  patient_phone VARCHAR(50) NOT NULL,
+  -- Notas adicionales
   patient_notes TEXT,
   
   -- Fecha y hora
@@ -101,6 +123,11 @@ CREATE TRIGGER update_services_updated_at
 
 CREATE TRIGGER update_appointments_updated_at
   BEFORE UPDATE ON appointments
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_patients_updated_at
+  BEFORE UPDATE ON patients
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 

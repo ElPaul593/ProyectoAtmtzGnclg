@@ -10,7 +10,7 @@ export const BUSINESS_CONFIG = {
   },
 
   // Días laborables (0 = Domingo, 6 = Sábado)
-  workingDays: [1, 2, 3, 4, 5], // Lunes a Viernes
+  workingDays: [1, 2, 3, 4, 5, 6], // Lunes a Sábado
 
   // Duración de slots en minutos
   slotDuration: 15,

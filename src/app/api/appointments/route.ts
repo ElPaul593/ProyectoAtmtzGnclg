@@ -22,14 +22,46 @@ export async function POST(request: NextRequest) {
 
     const {
       serviceId,
-      patientName,
-      patientEmail,
-      patientPhone,
+      patientId,
       patientNotes,
       startAt,
       paymentMethod,
       transferReference,
     } = result.data;
+
+    // Verificar que el paciente existe
+    const { data: patient, error: patientError } = await supabaseAdmin
+      .from('patients')
+      .select('id')
+      .eq('id', patientId)
+      .maybeSingle();
+
+    if (patientError) {
+      if (patientError.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Patient not found' },
+          { status: 404 }
+        );
+      }
+      if (patientError.code === '42P01' || patientError.message?.includes('does not exist')) {
+        return NextResponse.json(
+          { error: 'La tabla de pacientes no existe. Por favor ejecuta el script SQL de migración.' },
+          { status: 500 }
+        );
+      }
+      logger.error({ error: patientError }, 'Error checking patient');
+      return NextResponse.json(
+        { error: 'Error al verificar paciente' },
+        { status: 500 }
+      );
+    }
+
+    if (!patient) {
+      return NextResponse.json(
+        { error: 'Patient not found' },
+        { status: 404 }
+      );
+    }
 
     // Obtener servicio
     const { data: service, error: serviceError } = await supabaseAdmin
@@ -66,12 +98,7 @@ export async function POST(request: NextRequest) {
       status = 'PENDING';
     } else {
       status = 'AWAITING_TRANSFER';
-      if (!transferReference) {
-        return NextResponse.json(
-          { error: 'Transfer reference required for bank transfer' },
-          { status: 400 }
-        );
-      }
+      // transferReference es opcional al crear, se puede agregar después
     }
 
     // Crear cita
@@ -79,9 +106,7 @@ export async function POST(request: NextRequest) {
       .from('appointments')
       .insert({
         service_id: serviceId,
-        patient_name: patientName,
-        patient_email: patientEmail,
-        patient_phone: patientPhone,
+        patient_id: patientId,
         patient_notes: patientNotes || null,
         start_at: startAt,
         end_at: endAt,

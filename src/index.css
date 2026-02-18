@@ -2,73 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-white text-gray-900;
-  }
-}
-
-:root {
-  --primary: #6A4C93;
-  --secondary: #2A9D8F;
-  --accent: #F48FB1;
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F3E5F5;
-  --text: #374151;
-
-  /* Legacy/Compatibility vars - updated to match new theme where appropriate */
-  --bg: #FFFFFF;
-  --card: #F5F5F5;
-  --primary-2: #583C7E;
-  --muted: #6B6B6B;
-  --border: #E0E0E0;
-}
-
-body {
-  background-color: var(--bg-primary);
-  color: var(--text);
-}
-
 @layer utilities {
   .animate-fade-in-down {
     animation: fadeInDown 0.5s ease-out;
   }
-
   .animate-fade-in-up {
     animation: fadeInUp 0.8s ease-out;
   }
-
   .animate-fade-in-left {
     animation: fadeInLeft 1s ease-out;
   }
-
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
-
   .animate-float-delayed {
     animation: float 6s ease-in-out infinite;
     animation-delay: 3s;
   }
-
+  
   @keyframes fadeInDown {
     from {
       opacity: 0;
       transform: translateY(-20px);
     }
-
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-
+  
   @keyframes fadeInUp {
     from {
       opacity: 0;
       transform: translateY(20px);
     }
-
     to {
       opacity: 1;
       transform: translateY(0);
@@ -80,7 +47,6 @@ body {
       opacity: 0;
       transform: translateX(20px);
     }
-
     to {
       opacity: 1;
       transform: translateX(0);
@@ -91,11 +57,9 @@ body {
     0% {
       transform: translateY(0px);
     }
-
     50% {
       transform: translateY(-20px);
     }
-
     100% {
       transform: translateY(0px);
     }
