@@ -5,8 +5,8 @@ import { z } from 'zod';
  * Prefijo obligatorio: NEXT_PUBLIC_
  */
 const clientSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().min(1).default(''),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).default(''),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().default(''),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().default(''),
   NEXT_PUBLIC_PAYPAL_CLIENT_ID: z.string().default(''),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional().default('http://localhost:3000'),
 });
@@ -17,20 +17,20 @@ const clientSchema = z.object({
 const serverSchema = z.object({
   // Supabase
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  
+
   // PayPal
   PAYPAL_CLIENT_SECRET: z.string().optional(),
   PAYPAL_WEBHOOK_ID: z.string().optional(),
   PAYPAL_MODE: z.enum(['sandbox', 'live']).default('sandbox'),
-  
+
   // Google Calendar
   GOOGLE_CLIENT_EMAIL: z.string().email().optional(),
   GOOGLE_PRIVATE_KEY: z.string().optional(),
   GOOGLE_CALENDAR_ID: z.string().optional(),
-  
+
   // Admin
   ADMIN_API_KEY: z.string().optional(),
-  
+
   // AI
   OPENAI_API_KEY: z.string().optional(),
 });
@@ -100,25 +100,25 @@ function requireServerEnv<K extends keyof typeof serverEnv>(
 export const serverEnvRequired = {
   supabaseServiceRoleKey: (context = 'Supabase admin operations') =>
     requireServerEnv('SUPABASE_SERVICE_ROLE_KEY', context),
-  
+
   paypalClientSecret: (context = 'PayPal API') =>
     requireServerEnv('PAYPAL_CLIENT_SECRET', context),
-  
+
   paypalWebhookId: (context = 'PayPal webhook verification') =>
     requireServerEnv('PAYPAL_WEBHOOK_ID', context),
-  
+
   googlePrivateKey: (context = 'Google Calendar API') =>
     requireServerEnv('GOOGLE_PRIVATE_KEY', context),
-  
+
   googleClientEmail: (context = 'Google Calendar API') =>
     requireServerEnv('GOOGLE_CLIENT_EMAIL', context),
-  
+
   googleCalendarId: (context = 'Google Calendar API') =>
     requireServerEnv('GOOGLE_CALENDAR_ID', context),
-  
+
   adminApiKey: (context = 'Admin API') =>
     requireServerEnv('ADMIN_API_KEY', context),
-  
+
   openaiApiKey: (context = 'OpenAI API') =>
     requireServerEnv('OPENAI_API_KEY', context),
 };

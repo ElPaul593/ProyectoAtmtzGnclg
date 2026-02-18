@@ -26,12 +26,12 @@ const FlyerCarousel = () => {
 
     return (
         <div
-            className="relative group w-full max-w-[350px] md:max-w-[400px] mx-auto lg:mx-0"
+            className="relative group w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto lg:mx-0"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             {/* Main Container - Reverted to "Old" Design Style (Rounded 3rem, Rotated) */}
-            <div className="relative overflow-hidden rounded-[3rem] shadow-2xl bg-white h-[400px] md:h-[420px] transition-all duration-500 transform rotate-2 hover:rotate-0 border-4 border-white/50">
+            <div className="relative overflow-hidden rounded-[2.5rem] md:rounded-[3rem] shadow-2xl bg-white h-[450px] sm:h-[500px] md:h-[550px] transition-all duration-500 transform rotate-2 hover:rotate-0 border-4 border-white/50">
 
                 {/* Images */}
                 {FLYER_IMAGES.map((image, index) => (

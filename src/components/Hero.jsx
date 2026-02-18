@@ -54,12 +54,12 @@ const Hero = () => {
                 </div>
 
                 {/* Visual Content - Flyer Carousel */}
-                <div className="relative animate-fade-in-left order-1 lg:order-2 flex justify-center lg:block">
-                    <div className="relative z-10">
+                <div className="relative animate-fade-in-left order-1 lg:order-2 flex justify-center lg:block w-full">
+                    <div className="relative z-10 w-full flex justify-center lg:block">
                         <FlyerCarousel />
 
                         {/* Floating Badges - Positioned outside carousel for depth */}
-                        <div className="absolute -top-6 -right-2 lg:- left  -20 bg-white/95 backdrop-blur-md p-3 rounded-xl shadow-lg border-l-4 border-[#F48FB1] animate-float hidden sm:block">
+                        <div className="absolute -top-6 -right-2 lg:-left-20 bg-white/95 backdrop-blur-md p-3 rounded-xl shadow-lg border-l-4 border-[#F48FB1] animate-float hidden sm:block">
                             <div className="flex items-center space-x-3">
                                 <div className="p-2 bg-[#F48FB1]/10 rounded-full text-[#F48FB1]">
                                     <HeartPulse size={20} />
