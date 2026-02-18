@@ -59,7 +59,7 @@ const Hero = () => {
                         <FlyerCarousel />
 
                         {/* Floating Badges - Positioned outside carousel for depth */}
-                        <div className="absolute -top-6 -right-4 lg:-right-12 bg-white/95 backdrop-blur-md p-3 rounded-xl shadow-lg border-l-4 border-[#F48FB1] animate-float hidden sm:block">
+                        <div className="absolute -top-6 -right-2 lg:- left  -20 bg-white/95 backdrop-blur-md p-3 rounded-xl shadow-lg border-l-4 border-[#F48FB1] animate-float hidden sm:block">
                             <div className="flex items-center space-x-3">
                                 <div className="p-2 bg-[#F48FB1]/10 rounded-full text-[#F48FB1]">
                                     <HeartPulse size={20} />
