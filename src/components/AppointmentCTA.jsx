@@ -3,7 +3,7 @@ import { MessageCircle, PhoneCall, CalendarCheck } from 'lucide-react';
 
 const AppointmentCTA = () => {
     return (
-        <section className="py-24 relative overflow-hidden bg-[#6A4C93]">
+        <section id="contacto" className="py-24 relative overflow-hidden bg-[#6A4C93]">
             {/* Decorative Circles */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#F48FB1] opacity-10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>

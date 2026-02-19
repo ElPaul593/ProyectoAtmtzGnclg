@@ -4,8 +4,8 @@ export const LINKS = {
     address: "Juan Benigno Vela y Quito, Ambato",
     maps: "https://maps.google.com/?q=Juan+Benigno+Vela+y+Quito,+Ambato",
     social: {
-        facebook: "#",
-        instagram: "#",
+        facebook: "https://www.facebook.com/share/1CLStronhJ/",
+        instagram: "https://www.instagram.com/dr.alexcriollo?utm_source=qr&igsh=MW8yZmR4aG9uaXJrZA==",
     }
 };
 

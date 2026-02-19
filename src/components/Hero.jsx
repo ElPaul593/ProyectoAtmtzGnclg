@@ -4,7 +4,7 @@ import FlyerCarousel from './FlyerCarousel';
 
 const Hero = () => {
     return (
-        <section id="inicio" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-white to-[#F3E5F5] pt-20 lg:pt-0">
+        <section id="inicio" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-white to-[#F3E5F5] pt-32 lg:pt-32">
             {/* Decorative Background Elements */}
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-[#F48FB1] rounded-full blur-3xl opacity-20 animate-pulse"></div>
             <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-[#6A4C93] rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
