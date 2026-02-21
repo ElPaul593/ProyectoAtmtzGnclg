@@ -1,6 +1,6 @@
 import { Award, CheckCircle2, BadgeCheck, GraduationCap, Stethoscope, ArrowRight } from 'lucide-react';
 
-import ProfilePic from '../styles/Fotos/perfil/perfil.jpg';
+import ProfilePic from '../styles/Fotos/perfil/2p.jpeg';
 
 const AboutTimeline = () => {
     // Variables para ajustar el tamaño de la imagen de perfil
